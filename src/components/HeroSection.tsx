@@ -8,8 +8,33 @@ import { urlForImage } from '@/lib/sanity/utils'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 
+// components/HeroSection.tsx
 interface HeroSectionProps {
-  lists: List[]
+  lists: {
+    _id: string
+    title: string
+    slug: {
+      current: string
+    }
+    category: {
+      title: string
+      slug: {
+        current: string
+      }
+    }
+    items: {
+      position: number
+      title: string
+      description?: string
+      image?: {
+        asset: {
+          _ref: string
+        }
+      }
+      link?: string
+    }[]
+    publishedAt: string
+  }[]
 }
 
 export default function HeroSection({ lists }: HeroSectionProps) {

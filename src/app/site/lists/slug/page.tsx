@@ -12,25 +12,6 @@ interface ListPageProps {
   };
 }
 
-interface List extends SanityList {
-  id: string;
-  title: string;
-  publishedAt: string;
-  category?: {
-    title: string;
-    slug: {
-      current: string;
-    };
-  };
-  items: Array<{
-    position: number;
-    title: string;
-    description?: string;
-    image?: any;
-    link?: string;
-  }>;
-}
-
 export default async function ListPage({ params }: ListPageProps) {
   const list = await getListBySlug(params.slug);
   if (!list) return notFound();
@@ -46,7 +27,7 @@ export default async function ListPage({ params }: ListPageProps) {
     { label: list.title } // Current page, no href
   ];
 
- return (
+  return (
     <div className="container mx-auto px-4 py-8">
       <Breadcrumbs items={breadcrumbItems} />
 
@@ -118,10 +99,10 @@ export default async function ListPage({ params }: ListPageProps) {
           ))}
         </div>
 
-       <ShareButtons 
-        title={list.title} 
-        url={`/lists/${params.slug}`} 
-      />
+        <ShareButtons 
+          title={list.title} 
+          url={`/lists/${params.slug}`} 
+        />
       </article>
     </div>
   );

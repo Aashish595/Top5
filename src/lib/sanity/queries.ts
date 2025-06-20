@@ -1,21 +1,68 @@
 // src/lib/sanity/queries.ts
 import { client } from "./client";
 import { groq } from "next-sanity";
-import { Category, List, Poll, Post , SubCategory } from "@/types/sanity";
+import { 
+  SanityCategory, 
+  SanityList, 
+  SanityPoll, 
+  SanityPost,
+  SanitySubCategory
+} from "@/types/sanity";
 
+// Frontend types
+import { 
+  Category, 
+  List, 
+  Poll, 
+  Post,
+  SubCategory 
+} from "@/types";
+// src/lib/sanity/queries.ts
 export async function getCategories(): Promise<Category[]> {
   try {
-    return await client.fetch<Category[]>(groq`
-      *[_type == "category"] | order(order asc) {
+    const categories = await client.fetch<SanityCategory[]>(groq`
+      *[_type == "category" && !defined(parent)] | order(order asc) {
         _id,
+        _type,
         title,
         slug,
         description,
-        "parent": parent->{_id, title, slug},
         order,
         image
       }
     `);
+    
+    const subcategories = await client.fetch<SanitySubCategory[]>(groq`
+      *[_type == "category" && defined(parent)] | order(order asc) {
+        _id,
+        _type,
+        title,
+        slug,
+        description,
+        order,
+        image,
+        parent
+      }
+    `);
+
+    return categories.map(category => ({
+      _id: category._id,
+      title: category.title,
+      slug: category.slug,
+      description: category.description,
+      order: category.order,
+      image: category.image,
+      subcategories: subcategories
+        .filter(sub => sub.parent._ref === category._id)
+        .map(sub => ({
+          _id: sub._id,
+          title: sub.title,
+          slug: sub.slug,
+          description: sub.description,
+          order: sub.order,
+          image: sub.image
+        }))
+    }));
   } catch (error) {
     console.error("Error fetching categories:", error);
     return [];
@@ -24,12 +71,17 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getTrendingLists(limit = 5): Promise<List[]> {
   try {
-    return await client.fetch<List[]>(groq`
+    const lists = await client.fetch<(SanityList & {
+      category: { title: string; slug: { current: string } }
+    })[]>(groq`
       *[_type == "list" && isTrending == true] | order(publishedAt desc) [0...${limit}] {
         _id,
         title,
         slug,
-        category->{title, slug},
+        "category": category->{
+          title,
+          slug
+        },
         items[] {
           position,
           title,
@@ -41,6 +93,16 @@ export async function getTrendingLists(limit = 5): Promise<List[]> {
         isTrending
       }
     `);
+
+    return lists.map(list => ({
+      _id: list._id,
+      title: list.title,
+      slug: list.slug,
+      category: list.category,
+      items: list.items,
+      publishedAt: list.publishedAt,
+      isTrending: list.isTrending
+    }));
   } catch (error) {
     console.error("Error fetching trending lists:", error);
     return [];
@@ -120,31 +182,29 @@ export async function searchContent(query: string): Promise<Array<List | Post>> 
 }
 
 
-export async function getFeaturedLists(limit = 5): Promise<List[]> {
-  try {
-    return await client.fetch<List[]>(groq`
-      *[_type == "list" && defined(items[0].image)] | order(publishedAt desc) [0...${limit}] {
+export async function getFeaturedLists(): Promise<List[]> {
+  return client.fetch(groq`
+    *[_type == "list" && isFeatured == true] | order(publishedAt desc) {
+      _id,
+      _type,
+      title,
+      slug,
+      category->{
         _id,
         title,
-        slug,
-        category->{title, slug},
-        items[] {
-          position,
-          title,
-          description,
-          image,
-          link
-        },
-        publishedAt,
-        isTrending
-      }
-    `);
-  } catch (error) {
-    console.error("Error fetching featured lists:", error);
-    return [];
-  }
+        slug
+      },
+      items[] {
+        position,
+        title,
+        description,
+        image,
+        link
+      },
+      publishedAt
+    }
+  `);
 }
-
 export async function getPolls(): Promise<Poll[]> {
   try {
     return await client.fetch(groq`
@@ -180,40 +240,87 @@ export async function getCategoryBySlug(slug: string) {
   `, { slug })
 }
 
-export async function getSubcategoryBySlug(slug: string) {
-  return client.fetch<Category | null>(groq`
-    *[_type == "category" && slug.current == $slug][0] {
-      _id,
-      title,
-      slug,
-      description,
-      image,
-      "parent": parent->{title, slug}
-    }
-  `, { slug })
+export async function getSubcategoryBySlug(slug: string): Promise<SubCategory | null> {
+  try {
+    const subcategory = await client.fetch<SanitySubCategory & {
+      parent: { title: string; slug: { current: string } }
+    }>(groq`
+      *[_type == "category" && defined(parent) && slug.current == $slug][0] {
+        _id,
+        _type,
+        title,
+        slug,
+        description,
+        order,
+        image,
+        "parent": parent->{
+          title,
+          slug
+        }
+      }
+    `, { slug });
+
+    if (!subcategory) return null;
+
+    return {
+      _id: subcategory._id,
+      title: subcategory.title,
+      slug: subcategory.slug,
+      description: subcategory.description,
+      order: subcategory.order,
+      image: subcategory.image,
+      parent: subcategory.parent
+    };
+  } catch (error) {
+    console.error("Error fetching subcategory:", error);
+    return null;
+  }
 }
 
-export async function getListsBySubcategory(categorySlug: string, subcategorySlug: string) {
-  return client.fetch<List[]>(groq`
-    *[_type == "list" && 
-      category->slug.current == $subcategorySlug && 
-      category->parent->slug.current == $categorySlug
-    ] | order(publishedAt desc) {
-      _id,
-      title,
-      slug,
-      category->{title, slug},
-      items[] {
-        position,
+export async function getListsBySubcategory(
+  categorySlug: string, 
+  subcategorySlug: string
+): Promise<List[]> {
+  try {
+    const lists = await client.fetch<(SanityList & {
+      category: { title: string; slug: { current: string } }
+    })[]>(groq`
+      *[_type == "list" && 
+        category->slug.current == $subcategorySlug && 
+        category->parent->slug.current == $categorySlug
+      ] | order(publishedAt desc) {
+        _id,
         title,
-        description,
-        image,
-        link
-      },
-      publishedAt,
-      isTrending
-    }
-  `, { categorySlug, subcategorySlug })
+        slug,
+        "category": category->{
+          title,
+          slug
+        },
+        items[] {
+          position,
+          title,
+          description,
+          image,
+          link
+        },
+        publishedAt,
+        isTrending
+      }
+    `, { categorySlug, subcategorySlug });
+
+    return lists.map(list => ({
+      _id: list._id,
+      title: list.title,
+      slug: list.slug,
+      category: list.category,
+      items: list.items,
+      publishedAt: list.publishedAt,
+      isTrending: list.isTrending
+    }));
+  } catch (error) {
+    console.error("Error fetching lists by subcategory:", error);
+    return [];
+  }
 }
 
 export async function getListBySlug(slug: string) {
