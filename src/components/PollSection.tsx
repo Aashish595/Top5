@@ -1,44 +1,50 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { BarChart2 } from 'lucide-react'
-import { Button } from './ui/button'
-import { Poll } from '@/types'
+import { useState } from "react";
+import { BarChart2 } from "lucide-react";
+import { Button } from "./ui/button";
+import { Poll } from "@/types";
 
 const samplePoll: Poll = {
-  _id: '1',
-  _type: 'poll',
-  question: 'Which smartphone brand do you prefer?',
+  id: "1",
+  _type: "poll",
+  question: "Which smartphone brand do you prefer?",
   options: [
-    { text: 'Apple', votes: 45 },
-    { text: 'Samsung', votes: 30 },
-    { text: 'Google', votes: 15 },
-    { text: 'OnePlus', votes: 10 },
+    { id: "1", text: "Apple", votes: 45 }, // Added id
+    { id: "2", text: "Samsung", votes: 30 }, // Added id
+    { id: "3", text: "Google", votes: 15 }, // Added id
+    { id: "4", text: "OnePlus", votes: 10 }, // Added id
   ],
-  publishedAt: new Date().toISOString(),
-}
+ publishedAt: new Date().toISOString(),
+  totalVotes: 100, // Sum of all option votes
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+};
 
 export default function PollSection() {
-  const [poll, setPoll] = useState(samplePoll)
-  const [selectedOption, setSelectedOption] = useState<string | null>(null)
-  const [hasVoted, setHasVoted] = useState(false)
+  const [poll, setPoll] = useState(samplePoll);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [hasVoted, setHasVoted] = useState(false);
 
-  const totalVotes = poll.options.reduce((sum, option) => sum + option.votes, 0)
+  const totalVotes = poll.options.reduce(
+    (sum, option) => sum + option.votes,
+    0
+  );
 
   const handleVote = (optionText: string) => {
-    if (hasVoted) return
-    
-    setSelectedOption(optionText)
-    setPoll(prev => ({
+    if (hasVoted) return;
+
+    setSelectedOption(optionText);
+    setPoll((prev) => ({
       ...prev,
-      options: prev.options.map(option => 
-        option.text === optionText 
-          ? { ...option, votes: option.votes + 1 } 
+      options: prev.options.map((option) =>
+        option.text === optionText
+          ? { ...option, votes: option.votes + 1 }
           : option
       ),
-    }))
-    setHasVoted(true)
-  }
+    }));
+    setHasVoted(true);
+  };
 
   return (
     <div className="bg-background rounded-lg border p-6">
@@ -46,16 +52,15 @@ export default function PollSection() {
         <BarChart2 className="h-5 w-5 text-primary" />
         <h2 className="text-xl font-semibold">Daily Poll</h2>
       </div>
-      
+
       <h3 className="text-lg font-medium mb-4">{poll.question}</h3>
-      
+
       <div className="space-y-3 mb-6">
         {poll.options.map((option) => {
-          const percentage = totalVotes > 0 
-            ? Math.round((option.votes / totalVotes) * 100) 
-            : 0
-          const isSelected = selectedOption === option.text
-          
+          const percentage =
+            totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0;
+          const isSelected = selectedOption === option.text;
+
           return (
             <div key={option.text}>
               <button
@@ -63,11 +68,9 @@ export default function PollSection() {
                 disabled={hasVoted}
                 className={`w-full text-left p-3 rounded-md border transition-colors ${
                   isSelected
-                    ? 'border-primary bg-primary/10'
-                    : 'border-muted hover:bg-muted/50'
-                } ${
-                  hasVoted && !isSelected ? 'opacity-70' : ''
-                }`}
+                    ? "border-primary bg-primary/10"
+                    : "border-muted hover:bg-muted/50"
+                } ${hasVoted && !isSelected ? "opacity-70" : ""}`}
               >
                 <div className="flex justify-between items-center">
                   <span>{option.text}</span>
@@ -85,10 +88,10 @@ export default function PollSection() {
                 )}
               </button>
             </div>
-          )
+          );
         })}
       </div>
-      
+
       <div className="flex justify-between items-center text-sm text-muted-foreground">
         <span>{totalVotes} votes</span>
         {hasVoted ? (
@@ -98,5 +101,5 @@ export default function PollSection() {
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 
 interface DesktopSidebarProps {
-  categories: Category[]
+  categories?: Category[] // Make it optional
 }
 
 export default function DesktopSidebar({ categories }: DesktopSidebarProps) {
@@ -19,6 +19,20 @@ export default function DesktopSidebar({ categories }: DesktopSidebarProps) {
       ...prev,
       [categoryId]: !prev[categoryId],
     }))
+  }
+
+  // Loading or empty state
+  if (!categories || categories.length === 0) {
+    return (
+      <aside className="hidden lg:block w-64 shrink-0 border-r h-[calc(100vh-65px)] sticky top-16 overflow-y-auto">
+        <nav className="p-4">
+          <h2 className="mb-4 px-2 text-lg font-semibold tracking-tight">Categories</h2>
+          <div className="text-sm text-muted-foreground">
+            No categories available
+          </div>
+        </nav>
+      </aside>
+    )
   }
 
   return (

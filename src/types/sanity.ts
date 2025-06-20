@@ -76,3 +76,14 @@ export interface Poll {
   }[]
   publishedAt: string
 }
+
+// types/sanity.ts
+export interface SubCategory {
+  _id: string
+  _type: 'subcategory'
+  title: string
+  slug: {
+    current: string
+  }
+  // Add any other fields you need
+}
