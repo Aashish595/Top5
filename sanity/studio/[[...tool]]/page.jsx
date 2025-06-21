@@ -6,9 +6,10 @@
  * You can learn more about the next-sanity package here:
  * https://github.com/sanity-io/next-sanity
  */
+'use client'
 
 import { NextStudio } from 'next-sanity/studio'
-import config from '../../../../sanity/sanity.config'
+import config from '../../../sanity.config'
 
 export const dynamic = 'force-static'
 

@@ -8,6 +8,8 @@ interface TrendingListsProps {
   lists: List[]
 }
 
+
+
 export default function TrendingLists({ lists }: TrendingListsProps) {
   return (
     <section className="mt-8">

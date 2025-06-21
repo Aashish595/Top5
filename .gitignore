@@ -12,9 +12,9 @@
 /.turbo
 
 # sanity studio (if you install it later)
-studio/node_modules
-studio/.next/
-studio/.turbo
+sanity/node_modules
+sanity/.next/
+sanity/.turbo
 
 # debug logs
 npm-debug.log*

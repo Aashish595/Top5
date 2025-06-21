@@ -13,7 +13,6 @@ import {
 import { 
   Category, 
   List, 
-  Poll, 
   Post,
   SubCategory 
 } from "@/types";
@@ -205,27 +204,6 @@ export async function getFeaturedLists(): Promise<List[]> {
     }
   `);
 }
-export async function getPolls(): Promise<Poll[]> {
-  try {
-    return await client.fetch(groq`
-      *[_type == "poll"] | order(publishedAt desc) {
-        _id,
-        question,
-        "options": options[] {
-          _key,
-          text,
-          votes
-        },
-        publishedAt
-      }
-    `)
-    
-  } catch (error) {
-    console.error("Error fetching polls:", error);
-    return [];
-    
-  }
-}
 
 export async function getCategoryBySlug(slug: string) {
   return client.fetch<Category | null>(groq`
@@ -267,9 +245,9 @@ export async function getSubcategoryBySlug(slug: string): Promise<SubCategory | 
       title: subcategory.title,
       slug: subcategory.slug,
       description: subcategory.description,
-      order: subcategory.order,
-      image: subcategory.image,
-      parent: subcategory.parent
+      // order: subcategory.order,
+      // image: subcategory.image,
+      // parent: subcategory.parent
     };
   } catch (error) {
     console.error("Error fetching subcategory:", error);
@@ -374,3 +352,12 @@ export const getCategoriesWithSubcategories = async (): Promise<(Category & { su
     return [];
   }
 }
+
+export const getNavSections = async () => {
+  return await client.fetch(
+    groq`*[_type == "category"]{
+      title,
+      "items": subcategories[]->{ name, "url": slug.current }
+    }`
+  );
+};

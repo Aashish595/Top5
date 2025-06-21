@@ -1,9 +1,13 @@
-import { createImageUrlBuilder } from 'next-sanity'
-import { client } from './client'
+// This file contains utility functions for working with Sanity data in a Next.js application.
+
+import { groq } from 'next-sanity'
+import imageUrlBuilder from '@sanity/image-url';
+import { client } from './client';
 
 export const urlForImage = (source: any) => {
-  return createImageUrlBuilder(client).image(source)
-}
+  return imageUrlBuilder(client).image(source);
+};
+
 
 export function formatDate(dateString: string) {
   const date = new Date(dateString)
@@ -14,14 +18,3 @@ export function formatDate(dateString: string) {
   })
 }
 
-export function getActivePoll() {
-  return client.fetch(groq`
-    *[_type == "poll" && isActive == true] | order(publishedAt desc) [0] {
-      _id,
-      question,
-      options,
-      publishedAt,
-      category->{title, slug}
-    }
-  `)
-}
